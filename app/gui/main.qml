@@ -35,10 +35,11 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        // In CLI mode (stream/pair/quit), hide the Qt window entirely.
-        // Only the SDL streaming window should be visible.
-        if (typeof cliMode !== "undefined" && cliMode) {
+        // AstralTravel fork: hide the Qt window entirely in CLI stream mode.
+        if (typeof cliStreamMode !== "undefined" && cliStreamMode) {
             window.visible = false
+            window.width = 0
+            window.height = 0
         }
         // Show the window according to the user's preferences
         else if (SystemProperties.hasDesktopEnvironment) {

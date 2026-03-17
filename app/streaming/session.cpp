@@ -1834,10 +1834,19 @@ void Session::exec()
     // We use only the computer name on macOS to match Apple conventions where the
     // app name is featured in the menu bar and the document name is in the title bar.
 #ifdef Q_OS_DARWIN
-    std::string windowName = QString(m_Computer->name).toStdString();
+    std::string windowName = QString(m_Computer->name + " - Astral Travel " + QString(VERSION_STR)).toStdString();
 #else
-    std::string windowName = QString(m_Computer->name + " - Moonlight").toStdString();
+    std::string windowName = QString(m_Computer->name + " - Astral Travel " + QString(VERSION_STR)).toStdString();
 #endif
+
+    // AstralTravel fork: when AT_EMBED_WID is set, force windowed + borderless
+    const char* embedWid = SDL_getenv("AT_EMBED_WID");
+    if (embedWid && embedWid[0]) {
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
+                    "AstralTravel embed mode: windowed for reparenting into %s", embedWid);
+        m_IsFullScreen = false;
+        defaultWindowFlags |= SDL_WINDOW_BORDERLESS;
+    }
 
     m_Window = SDL_CreateWindow(windowName.c_str(),
                                 x,
@@ -1871,26 +1880,20 @@ void Session::exec()
 
     m_InputHandler->setWindow(m_Window);
 
-    QSvgRenderer svgIconRenderer(QString(":/res/moonlight.svg"));
-    QImage svgImage(ICON_SIZE, ICON_SIZE, QImage::Format_RGBA8888);
-    svgImage.fill(0);
-
-    QPainter svgPainter(&svgImage);
-    svgIconRenderer.render(&svgPainter);
-    SDL_Surface* iconSurface = SDL_CreateRGBSurfaceWithFormatFrom((void*)svgImage.constBits(),
-                                                                  svgImage.width(),
-                                                                  svgImage.height(),
-                                                                  32,
-                                                                  4 * svgImage.width(),
-                                                                  SDL_PIXELFORMAT_RGBA32);
-#ifndef Q_OS_DARWIN
-    // Other platforms seem to preserve our Qt icon when creating a new window.
-    if (iconSurface != nullptr) {
-        // This must be called before entering full-screen mode on Windows
-        // or our icon will not persist when toggling to windowed mode
-        SDL_SetWindowIcon(m_Window, iconSurface);
+    // AstralTravel fork: load our icon from AT_ICON_PATH env var
+    SDL_Surface* iconSurface = nullptr;
+    const char* iconPath = SDL_getenv("AT_ICON_PATH");
+    if (iconPath && iconPath[0]) {
+        iconSurface = SDL_LoadBMP(iconPath);
+        if (!iconSurface) {
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
+                        "Failed to load AT icon from %s: %s", iconPath, SDL_GetError());
+        }
     }
-#endif
+    if (iconSurface != nullptr) {
+        SDL_SetWindowIcon(m_Window, iconSurface);
+        SDL_FreeSurface(iconSurface);
+    }
 
     // Update the window display mode based on our current monitor
     // for if/when we enter full-screen mode.
