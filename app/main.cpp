@@ -928,12 +928,15 @@ int main(int argc, char *argv[])
     QString initialView;
     bool hasGUI = true;
 
+    bool cliMode = false;
+
     switch (commandLineParserResult) {
     case GlobalCommandLineParser::NormalStartRequested:
         initialView = "qrc:/gui/PcView.qml";
         break;
     case GlobalCommandLineParser::StreamRequested:
         {
+            cliMode = true;
             initialView = "qrc:/gui/CliStartStreamSegue.qml";
             StreamingPreferences* preferences = StreamingPreferences::get();
             StreamCommandLineParser streamParser;
@@ -946,6 +949,7 @@ int main(int argc, char *argv[])
         }
     case GlobalCommandLineParser::QuitRequested:
         {
+            cliMode = true;
             initialView = "qrc:/gui/CliQuitStreamSegue.qml";
             QuitCommandLineParser quitParser;
             quitParser.parse(app.arguments());
@@ -955,6 +959,7 @@ int main(int argc, char *argv[])
         }
     case GlobalCommandLineParser::PairRequested:
         {
+            cliMode = true;
             initialView = "qrc:/gui/CliPair.qml";
             PairCommandLineParser pairParser;
             pairParser.parse(app.arguments());
@@ -975,6 +980,7 @@ int main(int argc, char *argv[])
 
     if (hasGUI) {
         engine.rootContext()->setContextProperty("initialView", initialView);
+        engine.rootContext()->setContextProperty("cliMode", cliMode);
         engine.rootContext()->setContextProperty("runConfigChecks", commandLineParserResult == GlobalCommandLineParser::NormalStartRequested);
 
         // Load the main.qml file

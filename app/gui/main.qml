@@ -35,8 +35,13 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
+        // In CLI mode (stream/pair/quit), hide the Qt window entirely.
+        // Only the SDL streaming window should be visible.
+        if (typeof cliMode !== "undefined" && cliMode) {
+            window.visible = false
+        }
         // Show the window according to the user's preferences
-        if (SystemProperties.hasDesktopEnvironment) {
+        else if (SystemProperties.hasDesktopEnvironment) {
             if (StreamingPreferences.uiDisplayMode == StreamingPreferences.UI_MAXIMIZED) {
                 window.showMaximized()
             }
